@@ -117,16 +117,13 @@ namespace Asjc.MiniTimer
         public void Start() => Enabled = true;
 
         /// <summary>
-        /// Starts the <see cref="MiniTimer"/> by setting <see cref="Enabled"/> to <see langword="false"/>.
+        /// Stops the <see cref="MiniTimer"/> by setting <see cref="Enabled"/> to <see langword="false"/>.
         /// </summary>
         public void Stop() => Enabled = false;
 
         /// <summary>
         /// Waits for the thread to end.
         /// </summary>
-        /// <remarks>
-        /// This is usually waiting for the <see cref="Elapsed"/> event.
-        /// </remarks>
         public void Wait() => thread?.Join();
 
         /// <summary>
