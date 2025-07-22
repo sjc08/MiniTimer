@@ -58,7 +58,7 @@ namespace Asjc.MiniTimer
         /// </summary>
         /// <param name="interval">The interval in milliseconds.</param>
         /// <param name="elapsed">The enabled status of the timer.</param>
-        public MiniTimer(int interval, Action<MiniTimer> elapsed) : this(interval)
+        public MiniTimer(int interval, Action<MiniTimer> elapsed)
         {
             Interval = interval;
             Elapsed += elapsed;
