@@ -57,7 +57,7 @@ namespace Asjc.MiniTimer
         /// Initializes a new instance of the <see cref="MiniTimer"/> class with the specified <paramref name="interval"/> and <paramref name="elapsed"/> event.
         /// </summary>
         /// <param name="interval">The interval in milliseconds.</param>
-        /// <param name="elapsed">The enabled status of the timer.</param>
+        /// <param name="elapsed">The event handler for the Elapsed event.</param>
         public MiniTimer(int interval, Action<MiniTimer> elapsed)
         {
             Interval = interval;
@@ -67,7 +67,7 @@ namespace Asjc.MiniTimer
         /// <summary>
         /// Initializes a new instance of the <see cref="MiniTimer"/> class with the specified <paramref name="elapsed"/> event.
         /// </summary>
-        /// <param name="elapsed">The enabled status of the timer.</param>
+        /// <param name="elapsed">The event handler for the Elapsed event.</param>
         public MiniTimer(Action<MiniTimer> elapsed)
         {
             Elapsed += elapsed;
