@@ -7,3 +7,4 @@ A simple timer for timing tasks.
 ## Credits
 
 - Icon from https://www.iconfinder.com/icons/897246
+

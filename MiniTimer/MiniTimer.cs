@@ -3,17 +3,39 @@
 namespace Asjc.MiniTimer
 {
     /// <summary>
+    /// Specifies the operational status of a <see cref="MiniTimer"/> instance.
+    /// </summary>
+    public enum TimerStatus
+    {
+        /// <summary>
+        /// The timer is not running.
+        /// </summary>
+        Stopped,
+
+        /// <summary>
+        /// The timer is executing the <see cref="MiniTimer.Elapsed"/> event handler.
+        /// </summary>
+        Executing,
+
+        /// <summary>
+        /// The timer is waiting for the interval.
+        /// </summary>
+        Waiting
+    }
+
+    /// <summary>
     /// Provides a simple timer for general timing tasks.
     /// </summary>
     /// <remarks>
     /// By default, the timer executes in a new thread that is created each time it is started.
     /// </remarks>
-    public class MiniTimer
+    public class MiniTimer : IDisposable
     {
         private bool enabled;
         private Thread? thread;
         private readonly AutoResetEvent are = new(false);
         private readonly Stopwatch stopwatch = new();
+        private bool disposed = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MiniTimer"/> class.
@@ -30,26 +52,11 @@ namespace Asjc.MiniTimer
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MiniTimer"/> class with the specified <paramref name="interval"/> and <paramref name="enabled"/> status.
+        /// Initializes a new instance of the <see cref="MiniTimer"/> class with the specified <paramref name="elapsed"/> event.
         /// </summary>
-        /// <param name="interval">The interval in milliseconds.</param>
-        /// <param name="enabled">The enabled status of the timer.</param>
-        public MiniTimer(int interval, bool enabled)
-        {
-            Interval = interval;
-            Enabled = enabled;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MiniTimer"/> class with the specified <paramref name="interval"/>, <paramref name="enabled"/> status, and <paramref name="elapsed"/> event.
-        /// </summary>
-        /// <param name="interval">The interval in milliseconds.</param>
-        /// <param name="enabled">The enabled status of the timer.</param>
         /// <param name="elapsed">The event handler for the Elapsed event.</param>
-        public MiniTimer(int interval, bool enabled, Action<MiniTimer> elapsed)
+        public MiniTimer(Action<MiniTimer> elapsed)
         {
-            Interval = interval;
-            Enabled = enabled;
             Elapsed += elapsed;
         }
 
@@ -65,12 +72,16 @@ namespace Asjc.MiniTimer
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MiniTimer"/> class with the specified <paramref name="elapsed"/> event.
+        /// Initializes a new instance of the <see cref="MiniTimer"/> class with the specified <paramref name="interval"/>, <paramref name="enabled"/> status, and <paramref name="elapsed"/> event.
         /// </summary>
+        /// <param name="interval">The interval in milliseconds.</param>
+        /// <param name="enabled">The enabled status of the timer.</param>
         /// <param name="elapsed">The event handler for the Elapsed event.</param>
-        public MiniTimer(Action<MiniTimer> elapsed)
+        public MiniTimer(int interval, Action<MiniTimer> elapsed, bool enabled)
         {
+            Interval = interval;
             Elapsed += elapsed;
+            Enabled = enabled;
         }
 
         /// <summary>
@@ -105,6 +116,11 @@ namespace Asjc.MiniTimer
         /// Gets a <see langword="bool"/> indicating whether the <see cref="MiniTimer"/> is running.
         /// </summary>
         public bool IsRunning => thread != null && thread.IsAlive;
+
+        /// <summary>
+        /// Gets the current operational status of the <see cref="MiniTimer"/>.
+        /// </summary>
+        public TimerStatus Status { get; private set; } = TimerStatus.Stopped;
 
         /// <summary>
         /// Occurs when the interval elapses.
@@ -154,12 +170,42 @@ namespace Asjc.MiniTimer
 
         private void TimerThread()
         {
-            while (enabled)
+            try
             {
-                stopwatch.Restart();
-                Elapsed?.Invoke(this);
-                are.WaitOne(Math.Max(Interval - (int)stopwatch.ElapsedMilliseconds, 0));
+                while (enabled)
+                {
+                    stopwatch.Restart();
+                    Status = TimerStatus.Executing;
+                    Elapsed?.Invoke(this);
+                    Status = TimerStatus.Waiting;
+                    are.WaitOne(Math.Max(Interval - (int)stopwatch.ElapsedMilliseconds, 0));
+                }
+            }
+            finally
+            {
+                Status = TimerStatus.Stopped;
             }
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    StopAndWait();
+                    are.Close();
+                }
+                disposed = true;
+            }
+        }
+
+        ~MiniTimer() => Dispose(false);
     }
 }
